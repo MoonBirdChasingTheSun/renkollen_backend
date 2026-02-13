@@ -1,0 +1,33 @@
+# azure-pipelines.yml
+
+trigger:
+- main  # 只要 main 分支有更新，就触发流水线
+
+pool:
+  vmImage: ubuntu-latest  # 使用微软提供的最新 Ubuntu 虚拟机
+
+steps:
+# 1. 准备 Python 环境 (3.9 或 3.10 都可以)
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.10'
+    addToPath: true
+  displayName: 'Set up Python 3.10'
+
+# 2. 安装依赖包
+- script: |
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+    pip install flake8  # 安装代码检查工具
+  displayName: 'Install dependencies'
+
+# 3. 检查代码语法 (Linting)
+- script: |
+    # 停止构建如果出现严重错误 (语法错误, 定义了但没用的变量等)
+    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    # 警告代码风格问题 (比如缩进不对)，但不强制报错停止
+    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+  displayName: 'Lint with flake8'
+
+# 注意：目前我们只做代码检查，不运行 run.py
+# 因为服务器在云端，连不上你本地的 XAMPP 数据库，运行起来会报错。
